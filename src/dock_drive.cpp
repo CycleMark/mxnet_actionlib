@@ -119,18 +119,20 @@ ROS_INFO_STREAM("DockDrive::update");
   ecl::LegacyPose2D<double> pose_update;
   std::vector<unsigned char> signal_filt(signal.size(), 0);
   std::string debug_str;
-ROS_INFO_STREAM("DockDrive::update");
+ROS_INFO_STREAM("DockDrive::update2");
   // process bumper and charger event first
   // docking algorithm terminates here
   if(bumper || charger) {
     processBumpChargeEvent(bumper, charger);
+    ROS_INFO_STREAM("DockDrive::processBumpChargeEvent");
   }
   else {
+    ROS_INFO_STREAM("DockDrive::computePoseUpdate");
     computePoseUpdate(pose_update, pose);
     filterIRSensor(signal_filt, signal);
     updateVelocity(signal_filt, pose_update, debug_str);
   }
-ROS_INFO_STREAM("DockDrive::update");
+ROS_INFO_STREAM("DockDrive::update3");
   velocityCommands(vx, wz);
 
   // for easy debugging

@@ -28,7 +28,6 @@ typedef message_filters::sync_policies::ApproximateTime<
 
 class FibonacciAction
 {
-  FibonacciAction* self;
   DockDrive dock_;
   ros::Subscriber debug_;
   ros::Publisher velocity_commander_, motor_power_enabler_, debug_jabber_;
@@ -65,8 +64,6 @@ public:
   , as_(name, false)
     
   {
-    FibonacciAction* self;;
-
     action_name_ = name;
     name_ = name;
     as_.registerGoalCallback(boost::bind(&FibonacciAction::goalCb, this));
@@ -91,7 +88,7 @@ bool init(ros::NodeHandle& nh)
     dock_.setMinAbsW(min_abs_w);
 
   // Publishers and subscribers
-  velocity_commander_ = nh_.advertise<geometry_msgs::Twist>("velocity", 10);
+  velocity_commander_ = nh_.advertise<geometry_msgs::Twist>("/mobile_base/commands/velocity", 10);
   debug_jabber_ = nh_.advertise<std_msgs::String>("debug/feedback", 10);
 
   debug_ = nh_.subscribe("debug/mode_shift", 10, &FibonacciAction::debugCb, this);
@@ -149,36 +146,36 @@ void FibonacciAction::syncCb(const nav_msgs::OdometryConstPtr& odom,
                             const kobuki_msgs::SensorStateConstPtr& core,
                             const kobuki_msgs::DockInfraRedConstPtr& ir)
 {
-  ROS_INFO_STREAM("syncCb");
+  //ROS_INFO_STREAM("syncCb");
   //process and run
-  if(self->dock_.isEnabled()) 
+  if(this->dock_.isEnabled()) 
   {
-    ROS_INFO_STREAM("syncCb1");
+    //ROS_INFO_STREAM("syncCb1");
     //conversions
     KDL::Rotation rot;
     tf::quaternionMsgToKDL( odom->pose.pose.orientation, rot );
 
     double r, p, y;
     rot.GetRPY(r, p, y);
-ROS_INFO_STREAM("syncCb2");
+//ROS_INFO_STREAM("syncCb2");
     ecl::LegacyPose2D<double> pose;
     pose.x(odom->pose.pose.position.x);
     pose.y(odom->pose.pose.position.y);
     pose.heading(y);
 
     //update
-    self->dock_.update(ir->data, core->bumper, core->charger, pose);
+    this->dock_.update(ir->data, core->bumper, core->charger, pose);
 
     //publish debug stream
     std_msgs::StringPtr debug_log(new std_msgs::String);
-    debug_log->data = self->dock_.getDebugStream();
+    debug_log->data = this->dock_.getDebugStream();
     debug_jabber_.publish(debug_log);
-ROS_INFO_STREAM("syncCb");
+//ROS_INFO_STREAM("syncCb");
     //publish command velocity
-    if (self->dock_.canRun()) {
+    if (this->dock_.canRun()) {
       geometry_msgs::TwistPtr cmd_vel(new geometry_msgs::Twist);
-      cmd_vel->linear.x = self->dock_.getVX();
-      cmd_vel->angular.z = self->dock_.getWZ();
+      cmd_vel->linear.x = this->dock_.getVX();
+      cmd_vel->angular.z = this->dock_.getWZ();
       velocity_commander_.publish(cmd_vel);
     }
   }
