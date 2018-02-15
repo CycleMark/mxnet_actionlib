@@ -15,7 +15,7 @@
  *       this software without specific prior written permission.
  *
  * this software is provided by the copyright holders and contributors "as is"
- * and any express or implied warranties, including, but not limited to, the
+9 * and any express or implied warranties, including, but not limited to, the
  * implied warranties of merchantability and fitness for a particular purpose
  * are disclaimed. in no event shall the copyright owner or contributors be
  * liable for any direct, indirect, incidental, special, exemplary, or
@@ -84,7 +84,13 @@ DockDrive::DockDrive() :
   ROBOT_STATE_STR[12] = "LOST";
 }
 
-DockDrive::~DockDrive(){;}
+DockDrive::~DockDrive(){
+
+	m_BumpStateErrorCtr = 0;
+
+;
+
+}
 
 void DockDrive::setVel(double v, double w)
 {
@@ -114,18 +120,20 @@ void DockDrive::modeShift(const std::string& mode)
 void DockDrive::update(const std::vector<unsigned char> &signal
                 , const unsigned char &bumper
                 , const unsigned char &charger
-                , const ecl::LegacyPose2D<double>& pose) {
+                , const ecl::LegacyPose2D<double>& pose) 
+{
   ecl::LegacyPose2D<double> pose_update;
   std::vector<unsigned char> signal_filt(signal.size(), 0);
   std::string debug_str;
   // process bumper and charger event first
   // docking algorithm terminates here
-  if(bumper || charger) {
+  if(bumper || charger) 
+  {
     processBumpChargeEvent(bumper, charger);
     ROS_INFO_STREAM("DockDrive::processBumpChargeEvent");
   }
   else {
-    ROS_INFO_STREAM("DockDrive::computePoseUpdate");
+//    ROS_INFO_STREAM("DockDrive::computePoseUpdate");
     computePoseUpdate(pose_update, pose);
     filterIRSensor(signal_filt, signal);
     updateVelocity(signal_filt, pose_update, debug_str);
@@ -194,16 +202,22 @@ void DockDrive::velocityCommands(const double &vx_, const double &wz_) {
  * @charger - indicates whether robot is charging
  *
  ****************************************************/
-void DockDrive::processBumpChargeEvent(const unsigned char& bumper, const unsigned char& charger) {
+void DockDrive::processBumpChargeEvent(const unsigned char& bumper, 
+																			 const unsigned char& charger) 
+{
   RobotDockingState::State new_state;
   if(charger && bumper) {
     new_state = RobotDockingState::BUMPED_DOCK;
     setStateVel(new_state, -0.01, 0.0);
+    ROS_INFO_STREAM("BUMPED_DOCK");
+
   }
   else if(charger) {
     if(dock_stabilizer++ == 0) {
       new_state = RobotDockingState::DOCKED_IN;
       setStateVel(new_state, 0.0, 0.0);
+    ROS_INFO_STREAM("DOCKED_IN");
+
     }
     else if(dock_stabilizer > 20) {
       dock_stabilizer = 0;
@@ -211,16 +225,35 @@ void DockDrive::processBumpChargeEvent(const unsigned char& bumper, const unsign
       can_run = false;
       new_state = RobotDockingState::DONE;
       setStateVel(new_state, 0.0, 0.0);
+    ROS_INFO_STREAM("DONE");
+
     }
     else {
       new_state = RobotDockingState::DOCKED_IN;
       setStateVel(new_state, 0.0, 0.0);
+    ROS_INFO_STREAM("DOCKED_IN");
+
     }
   }
   else if(bumper) {
     new_state = RobotDockingState::BUMPED;
     setStateVel(new_state, -0.05, 0.0);
     bump_remainder = 0;
+    ROS_INFO_STREAM("BumpStateError");
+		m_BumpStateErrorCtr++;
+		if (m_BumpStateErrorCtr > 30)
+		{
+			ROS_INFO_STREAM("Robot Failed To Dock Sucessfully - Aborting");
+			// ToDo - work out a way to re-attempt docking
+			dock_stabilizer = 0;
+      is_enabled = false;
+      can_run = false;
+      new_state = RobotDockingState::DONE;
+      setStateVel(new_state, 0.0, 0.0);
+
+			m_BumpStateErrorCtr = 0;
+		}
+
   }
   state_str = ROBOT_STATE_STR[new_state];
 }
@@ -296,3 +329,5 @@ bool DockDrive::validateSignal(const std::vector<unsigned char>& signal_filt, co
 }
 
 } // kobuki namespace
+
+

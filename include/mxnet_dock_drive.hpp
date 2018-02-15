@@ -143,7 +143,7 @@ private:
   double min_abs_v;
   double min_abs_w;
   ecl::LegacyPose2D<double> pose_priv;
-
+	int m_BumpStateErrorCtr;
   
 
   void setVel(double v, double w);
