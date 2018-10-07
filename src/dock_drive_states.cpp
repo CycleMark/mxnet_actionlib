@@ -36,6 +36,9 @@
 *****************************************************************************/
 
 #include "../include/mxnet_dock_drive.hpp"
+#include <ros/ros.h>
+
+using namespace std;
 
 /*****************************************************************************
 ** Namespaces
@@ -89,7 +92,7 @@ namespace kobuki {
     oss << "rotated: " << std::fixed << std::setprecision(2) << std::setw(4) << rotated;
     debug_str = oss.str();
 
-
+ //cout << "Scan State" << endl;
 
     if((mid & DockStationIRState::FAR_CENTER) || (mid & DockStationIRState::NEAR_CENTER))
     {
@@ -152,6 +155,8 @@ namespace kobuki {
     double next_vx;
     double next_wz;
 
+ //cout << "Find Stream" << endl;
+
     if(dock_detector > 0) // robot is located in right side of dock
     {
       // turn right, CW until get right signal from left sensor
@@ -204,7 +209,12 @@ namespace kobuki {
     double next_vx;
     double next_wz;
 
-    if(dock_detector > 0) { // robot is located in right side of dock
+ //cout << "Get Stream" << endl;
+
+    if(dock_detector > 0) 
+		{ 
+			// robot is located in right side of dock
+			ROS_INFO_STREAM("Robot is located in right side of dock");
       if (left & (DockStationIRState::FAR_LEFT + DockStationIRState::NEAR_LEFT)) {
         dock_detector = 0;
         rotated = 0;
@@ -218,7 +228,10 @@ namespace kobuki {
         next_wz = 0.0;
       }
     }
-    else if(dock_detector < 0) { // robot is located left side of dock
+    else if(dock_detector < 0) 
+		{
+			 // robot is located left side of dock
+			ROS_INFO_STREAM("Robot is located left side of dock");
       if(right & (DockStationIRState::FAR_RIGHT + DockStationIRState::NEAR_RIGHT)) {
         dock_detector = 0;
         rotated = 0;
@@ -226,7 +239,9 @@ namespace kobuki {
         next_vx = 0;
         next_wz = 0.1;
       }
-      else {
+      else 
+			{
+				ROS_INFO_STREAM("Robot Dock Location Unknown");
         next_state = RobotDockingState::GET_STREAM;
         next_vx = 0.05;
         next_wz = 0.0;
@@ -255,6 +270,8 @@ namespace kobuki {
     RobotDockingState::State next_state = nstate;
     double next_vx = nvx;
     double next_wz = nwz;
+
+ //cout << "Aligned Stream" << endl;
 
     if(mid)
     {
@@ -322,6 +339,8 @@ namespace kobuki {
   ********************************************************/
   void DockDrive::bumped(RobotDockingState::State& nstate,double& nvx, double& nwz, int& bump_count)
   {
+//cout << "Bumped" << endl;
+
     if(bump_count < 10)
     {
       nvx = -0.05;

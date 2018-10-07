@@ -10,8 +10,7 @@ void doneCb(const actionlib::SimpleClientGoalState& state,
             const AutoDockingResultConstPtr& result)
 {
 		ROS_INFO("Finished in state [%s]", state.toString().c_str());
-		ROS_INFO("Answer: %s", result->text.c_str());
-//  ros::shutdown();
+		ROS_INFO("Answer: %s", result->text);
 }
 
 // Called once when the goal becomes active
@@ -23,8 +22,8 @@ void activeCb()
 // Called every time feedback is received for the goal
 void feedbackCb(const AutoDockingFeedbackConstPtr& feedback)
 {
-	ROS_INFO("Got Feedback state %s", feedback->state.c_str());
-	ROS_INFO("Got Feedback text %s", feedback->text.c_str());
+	ROS_INFO("Got Feedback state %s", feedback->state);
+	ROS_INFO("Got Feedback text %s", feedback->text);
 
 }
 
@@ -50,8 +49,6 @@ int main (int argc, char **argv)
   ROS_INFO("Action server started, sending goal.");
   // send a goal to the action
   mxnet_actionlib::AutoDockingGoal goal;
-//  goal.order = 20;
-//  ac.sendGoal(goal);
 
 	// Need to register for feedback
 	ac.sendGoal(goal, &doneCb, &activeCb, &feedbackCb);
@@ -59,8 +56,6 @@ int main (int argc, char **argv)
   //wait for the action to return
   bool finished_before_timeout = ac.waitForResult();
 	actionlib::SimpleClientGoalState state = ac.getState();
-
-	//ros::spin();
 
 	if (state == actionlib::SimpleClientGoalState::LOST)
   {
@@ -83,6 +78,5 @@ int main (int argc, char **argv)
   else
     ROS_INFO("Action did not finish before the time out.");
 
-  //exit
   return 0;
 }

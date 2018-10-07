@@ -10,7 +10,7 @@ void doneCb(const actionlib::SimpleClientGoalState& state,
             const AutoDockingResultConstPtr& result)
 {
 		ROS_INFO("Finished in state [%s]", state.toString().c_str());
-		ROS_INFO("Answer: %s", result->text.c_str());
+		ROS_INFO("Answer: %s", result->text);
 //  ros::shutdown();
 }
 
@@ -23,14 +23,9 @@ void activeCb()
 // Called every time feedback is received for the goal
 void feedbackCb(const AutoDockingFeedbackConstPtr& feedback)
 {
-	ROS_INFO("Got Feedback state %s", feedback->state.c_str());
-	ROS_INFO("Got Feedback text %s", feedback->text.c_str());
+	feedback->state;
+	//	ROS_INFO("Got Feedback text %s", feedback->text);
 
-}
-
- void spinThread()
-{
- 	ros::spin();
 }
 
 
@@ -41,7 +36,6 @@ int main (int argc, char **argv)
   // create the action client
   // true causes the client to spin it's own thread
   actionlib::SimpleActionClient<mxnet_actionlib::AutoDockingAction> ac("fibonacci", true);
-	boost::thread spin_thread(&spinThread);
 
   ROS_INFO("Waiting for action server to start.");
   // wait for the action server to start

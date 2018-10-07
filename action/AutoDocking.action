@@ -2,6 +2,7 @@
 ---
 #result
 string text
+string state
 ---
 #feedback
 string state

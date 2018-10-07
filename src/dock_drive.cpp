@@ -82,6 +82,8 @@ DockDrive::DockDrive() :
   ROBOT_STATE_STR[10] = "ALIGNED_NEAR";
   ROBOT_STATE_STR[11] = "UNKNOWN";
   ROBOT_STATE_STR[12] = "LOST";
+
+	m_BumpStateErrorCtr = 0;
 }
 
 DockDrive::~DockDrive(){
@@ -216,7 +218,7 @@ void DockDrive::processBumpChargeEvent(const unsigned char& bumper,
     if(dock_stabilizer++ == 0) {
       new_state = RobotDockingState::DOCKED_IN;
       setStateVel(new_state, 0.0, 0.0);
-    ROS_INFO_STREAM("DOCKED_IN");
+    	ROS_INFO_STREAM("DOCKED_IN");
 
     }
     else if(dock_stabilizer > 20) {
@@ -225,32 +227,39 @@ void DockDrive::processBumpChargeEvent(const unsigned char& bumper,
       can_run = false;
       new_state = RobotDockingState::DONE;
       setStateVel(new_state, 0.0, 0.0);
-    ROS_INFO_STREAM("DONE");
+  	  ROS_INFO_STREAM("DONE");
 
     }
     else {
       new_state = RobotDockingState::DOCKED_IN;
       setStateVel(new_state, 0.0, 0.0);
-    ROS_INFO_STREAM("DOCKED_IN");
+	    ROS_INFO_STREAM("DOCKED_IN");
 
     }
   }
-  else if(bumper) {
-    new_state = RobotDockingState::BUMPED;
-    setStateVel(new_state, -0.05, 0.0);
-    bump_remainder = 0;
-    ROS_INFO_STREAM("BumpStateError");
-		m_BumpStateErrorCtr++;
-		if (m_BumpStateErrorCtr > 30)
+  else if(bumper) 
+	{
+		if (m_BumpStateErrorCtr < 15)
+		{
+    	new_state = RobotDockingState::BUMPED;
+	    setStateVel(new_state, -0.05, 0.0);
+  	  bump_remainder = 0;
+   	 ROS_INFO_STREAM("BumpStateError");
+			m_BumpStateErrorCtr++;
+
+			ROS_INFO("m_BumpStateErrorCtr: %i", m_BumpStateErrorCtr);
+		}
+		else if (m_BumpStateErrorCtr >= 15)
 		{
 			ROS_INFO_STREAM("Robot Failed To Dock Sucessfully - Aborting");
 			// ToDo - work out a way to re-attempt docking
 			dock_stabilizer = 0;
       is_enabled = false;
       can_run = false;
-      new_state = RobotDockingState::DONE;
+      new_state = RobotDockingState::LOST;
       setStateVel(new_state, 0.0, 0.0);
-
+			ROS_INFO_STREAM("LOST");
+			ROS_INFO("m_BumpStateErrorCtr: %i", m_BumpStateErrorCtr);
 			m_BumpStateErrorCtr = 0;
 		}
 
@@ -299,6 +308,10 @@ void DockDrive::updateVelocity(const std::vector<unsigned char>& signal_filt, co
     case RobotDockingState::BUMPED:
       bumped(new_state, new_vx, new_wz, bump_remainder);
       break;
+		case RobotDockingState::LOST:
+			new_state =  RobotDockingState::LOST;
+			ROS_INFO_STREAM("Case LOST");
+			break;
     default:
       oss << "Wrong state : " << current_state;
       debug_str = oss.str();

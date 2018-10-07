@@ -188,8 +188,8 @@ void FibonacciAction::syncCb(const nav_msgs::OdometryConstPtr& odom,
 		{
 			ROS_INFO("Docked DONE!");
       feedback_.state = dock_.getStateStr();
-      feedback_.text = "Arrived At Docking Station Successfully";//dock_.getDebugStr();
-			result_.text = "DONE...Arrived on docking station successfully.";
+      feedback_.text = "Arrived At Docking Station Successfully";
+			result_.text = "Arrived on docking station successfully.";
 			result_.state = dock_.getStateStr();
       as_.setSucceeded(result_);
       ROS_INFO_STREAM( "[" << name_ << "]: Arrived on docking station successfully.");
