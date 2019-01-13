@@ -1,35 +1,21 @@
 /*
- * copyright (c) 2013, Yujin Robot.
- * all rights reserved.
- *
- * redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *     * redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * neither the name of yujin robot nor the names of its
- *       contributors may be used to endorse or promote products derived from
- *       this software without specific prior written permission.
- *
- * this software is provided by the copyright holders and contributors "as is"
- * and any express or implied warranties, including, but not limited to, the
- * implied warranties of merchantability and fitness for a particular purpose
- * are disclaimed. in no event shall the copyright owner or contributors be
- * liable for any direct, indirect, incidental, special, exemplary, or
- * consequential damages (including, but not limited to, procurement of
- * substitute goods or services; loss of use, data, or profits; or business
- * interruption) however caused and on any theory of liability, whether in
- * contract, strict liability, or tort (including negligence or otherwise)
- * arising in any way out of the use of this software, even if advised of the
- * possibility of such damage.
- */
-/**
- * @file /kobuki_driver/src/driver/dock_drive_states.cpp
- *
- **/
+This is an example of the dock IR message. A 3 byte array arranged thus:
+
+[Right IR Sensor, Middle IR Sensor, Left IR Sensor]
+
+Message Example
+
+---
+header:
+  seq: 62605
+  stamp:
+    secs: 1547332290
+    nsecs: 880964496
+  frame_id: "dock_ir_link"
+data: [48, 0, 0]
+---
+
+*/
 
 /*****************************************************************************
 ** includes
@@ -78,7 +64,13 @@ namespace kobuki {
    *  @dock_detecotr - indicates where the dock is located. Positive means dock is on left side of robot
    *  @rotated       - indicates how much the robot has rotated while scan
    ********************************************************/
-  void DockDrive::scan(RobotDockingState::State& nstate,double& nvx, double& nwz, const std::vector<unsigned char>& signal_filt, const ecl::LegacyPose2D<double>& pose_update, std::string& debug_str) {
+  void DockDrive::scan( RobotDockingState::State& nstate,
+                        double& nvx, 
+                        double& nwz, 
+                        const std::vector<unsigned char>& signal_filt, 
+                        const ecl::LegacyPose2D<double>& pose_update, 
+                        std::string& debug_str) 
+  {
     unsigned char right = signal_filt[0];
     unsigned char mid   = signal_filt[1];
     unsigned char left  = signal_filt[2];
@@ -155,17 +147,21 @@ namespace kobuki {
     double next_vx;
     double next_wz;
 
+
  //cout << "Find Stream" << endl;
 
     if(dock_detector > 0) // robot is located in right side of dock
     {
       // turn right, CW until get right signal from left sensor
-      if(left & (DockStationIRState::FAR_RIGHT + DockStationIRState::NEAR_RIGHT)) {
+      if(left & (DockStationIRState::FAR_RIGHT + DockStationIRState::NEAR_RIGHT)) 
+      //if(right & (DockStationIRState::FAR_RIGHT + DockStationIRState::NEAR_RIGHT)) 
+      {
         next_state = RobotDockingState::GET_STREAM;
         next_vx = 0.5;
         next_wz = 0.0;
       }
-      else {
+      else 
+      {
         next_state = RobotDockingState::FIND_STREAM;
         next_vx = 0.0;
         next_wz = -0.33;
@@ -175,12 +171,14 @@ namespace kobuki {
     {
       // turn left, CCW until get left signal from right sensor
       if(right & (DockStationIRState::FAR_LEFT + DockStationIRState::NEAR_LEFT))
+ //     if(left & (DockStationIRState::FAR_LEFT + DockStationIRState::NEAR_LEFT))
       {
         next_state = RobotDockingState::GET_STREAM;
         next_vx = 0.5;
         next_wz = 0.0;
       }
-      else {
+      else 
+      {
         next_state = RobotDockingState::FIND_STREAM;
         next_vx = 0.0;
         next_wz = 0.33;
@@ -194,13 +192,17 @@ namespace kobuki {
 
  /********************************************************
   * Get stream
-  *   @brief In this state, robot is heading the center line of dock. When it passes the center, it rotates toward the dock
+  *   @brief In this state, robot is heading the center line of dock. 
+  *   When it passes the center, it rotates toward the dock
   *
   *   Shared Variable
   *   @ dock_detector - reset
   *   @ rotated       - reset
   ********************************************************/
-  void DockDrive::get_stream(RobotDockingState::State& nstate,double& nvx, double& nwz, const std::vector<unsigned char>& signal_filt)
+  void DockDrive::get_stream( RobotDockingState::State& nstate,
+                              double& nvx, 
+                              double& nwz, 
+                              const std::vector<unsigned char>& signal_filt)
   {
     unsigned char right = signal_filt[0];
     unsigned char mid   = signal_filt[1];
@@ -214,15 +216,17 @@ namespace kobuki {
     if(dock_detector > 0) 
 		{ 
 			// robot is located in right side of dock
-			ROS_INFO_STREAM("Robot is located in right side of dock");
       if (left & (DockStationIRState::FAR_LEFT + DockStationIRState::NEAR_LEFT)) {
+        ROS_INFO_STREAM("Robot is located on right side of dock - Next State SCAN");
         dock_detector = 0;
         rotated = 0;
         next_state = RobotDockingState::SCAN;
         next_vx = 0;
         next_wz = 0.1;
       }
-      else {
+      else 
+      {
+        ROS_INFO_STREAM("Robot Dock Location Unknown [RIGHT] - Next State GET_STREAM");
         next_state = RobotDockingState::GET_STREAM;
         next_vx = 0.05;
         next_wz = 0.0;
@@ -231,8 +235,9 @@ namespace kobuki {
     else if(dock_detector < 0) 
 		{
 			 // robot is located left side of dock
-			ROS_INFO_STREAM("Robot is located left side of dock");
-      if(right & (DockStationIRState::FAR_RIGHT + DockStationIRState::NEAR_RIGHT)) {
+      if(right & (DockStationIRState::FAR_RIGHT + DockStationIRState::NEAR_RIGHT)) 
+      {
+        ROS_INFO_STREAM("Robot is located on left side of dock - Next State SCAN");
         dock_detector = 0;
         rotated = 0;
         next_state = RobotDockingState::SCAN;
@@ -241,7 +246,7 @@ namespace kobuki {
       }
       else 
 			{
-				ROS_INFO_STREAM("Robot Dock Location Unknown");
+				ROS_INFO_STREAM("Robot Dock Location Unknown [LEFT] - Next State GET_STREAM");
         next_state = RobotDockingState::GET_STREAM;
         next_vx = 0.05;
         next_wz = 0.0;
@@ -275,44 +280,58 @@ namespace kobuki {
 
     if(mid)
     {
-      if(((mid & DockStationIRState::NEAR) == DockStationIRState::NEAR_CENTER) || ((mid & DockStationIRState::NEAR) == DockStationIRState::NEAR))
+      if(((mid & DockStationIRState::NEAR) == DockStationIRState::NEAR_CENTER) || 
+         ((mid & DockStationIRState::NEAR) == DockStationIRState::NEAR))
       {
         debug_str = "AlignedNearCenter";
+        ROS_INFO_STREAM("AlignedNearCenter");
         next_state = RobotDockingState::ALIGNED_NEAR;
         next_vx = 0.05;
         next_wz = 0.0;
       }
-      else if(mid & DockStationIRState::NEAR_LEFT) {
+      else if(mid & DockStationIRState::NEAR_LEFT) 
+      {
         debug_str = "AlignedNearLeft";
+        ROS_INFO_STREAM("AlignedNearLeft");
         next_state = RobotDockingState::ALIGNED_NEAR;
         next_vx = 0.05;
-        next_wz = 0.1;
+        next_wz = 0.5;
       }
-      else if(mid & DockStationIRState::NEAR_RIGHT) {
+      else if(mid & DockStationIRState::NEAR_RIGHT) 
+      {
         debug_str = "AlignedNearRight";
+        ROS_INFO_STREAM("AlignedNearRight");
         next_state = RobotDockingState::ALIGNED_NEAR;
         next_vx = 0.05;
-        next_wz = -0.1;
+        next_wz = -0.5;
       }
-      else if(((mid & DockStationIRState::FAR) == DockStationIRState::FAR_CENTER) || ((mid & DockStationIRState::FAR) == DockStationIRState::FAR)) {
+      else if(((mid & DockStationIRState::FAR) == DockStationIRState::FAR_CENTER) || 
+              ((mid & DockStationIRState::FAR) == DockStationIRState::FAR)) 
+      {
         debug_str = "AlignedFarCenter";
+        ROS_INFO_STREAM("AlignedFarCenter");
         next_state = RobotDockingState::ALIGNED_FAR;
         next_vx = 0.1;
         next_wz = 0.0;
       }
       else if(mid & DockStationIRState::FAR_LEFT) {
         debug_str = "AlignedFarLeft";
+        ROS_INFO_STREAM("AlignedFarLeft");
         next_state = RobotDockingState::ALIGNED_FAR;
         next_vx = 0.1;
         next_wz = 0.3;
       }
-      else if(mid & DockStationIRState::FAR_RIGHT) {
+      else if(mid & DockStationIRState::FAR_RIGHT) 
+      {
         debug_str = "AlignedFarRight";
+        ROS_INFO_STREAM("AlignedFarRight");
         next_state = RobotDockingState::ALIGNED_FAR;
         next_vx = 0.1;
         next_wz = -0.3;
       }
-      else {
+      else 
+      {
+        ROS_INFO_STREAM("Aligned Else 1");
         dock_detector = 0;
         rotated = 0.0;
         next_state = RobotDockingState::SCAN;
@@ -320,7 +339,9 @@ namespace kobuki {
         next_wz = 0.66;
       }
     }
-    else {
+    else 
+    {
+        ROS_INFO_STREAM("Aligned Else 2");
         next_state = RobotDockingState::SCAN;
         next_vx = 0.0;
         next_wz = 0.66;
@@ -330,7 +351,6 @@ namespace kobuki {
     nvx = next_vx;
     nwz = next_wz;
   }
-
 
  /********************************************************
   * Bumped

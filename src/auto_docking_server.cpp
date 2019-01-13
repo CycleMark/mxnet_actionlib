@@ -1,6 +1,6 @@
 #include <ros/ros.h>
 #include <actionlib/server/simple_action_server.h>
-#include <mxnet_actionlib/AutoDockingAction.h>
+#include <../../../devel_isolated/mxnet_actionlib/include/mxnet_actionlib/AutoDockingAction.h>
 
 #include <std_msgs/String.h>
 #include <nav_msgs/Odometry.h>
@@ -144,6 +144,10 @@ void preemptCb()
 }
 };
 
+// This is the main entry into the docking service. "Update" is called with the sensor data (IR, Bumber & Charge state). 
+// From with the velocities are determined, and returned in variables VX and WX which are then published to ROS
+// and finally drive the robot.
+
 void FibonacciAction::syncCb(const nav_msgs::OdometryConstPtr& odom,
                             const kobuki_msgs::SensorStateConstPtr& core,
                             const kobuki_msgs::DockInfraRedConstPtr& ir)
@@ -221,7 +225,7 @@ void FibonacciAction::syncCb(const nav_msgs::OdometryConstPtr& odom,
     } 
 		else 
 		{
-			ROS_INFO("Docked DEFAULT!");
+			//ROS_INFO("Docked DEFAULT!");
       feedback_.state = dock_.getStateStr();
       feedback_.text = dock_.getDebugStr();
 //      as_.publishFeedback(feedback_);

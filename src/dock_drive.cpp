@@ -1,35 +1,3 @@
-/*
- * copyright (c) 2013, yujin robot.
- * all rights reserved.
- *
- * redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *     * redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * neither the name of yujin robot nor the names of its
- *       contributors may be used to endorse or promote products derived from
- *       this software without specific prior written permission.
- *
- * this software is provided by the copyright holders and contributors "as is"
-9 * and any express or implied warranties, including, but not limited to, the
- * implied warranties of merchantability and fitness for a particular purpose
- * are disclaimed. in no event shall the copyright owner or contributors be
- * liable for any direct, indirect, incidental, special, exemplary, or
- * consequential damages (including, but not limited to, procurement of
- * substitute goods or services; loss of use, data, or profits; or business
- * interruption) however caused and on any theory of liability, whether in
- * contract, strict liability, or tort (including negligence or otherwise)
- * arising in any way out of the use of this software, even if advised of the
- * possibility of such damage.
- */
-/**
- * @file /kobuki_driver/src/driver/dock_drive.cpp
- *
- **/
 
 /*****************************************************************************
 ** includes
@@ -65,7 +33,7 @@ DockDrive::DockDrive() :
   , rotated(0.0)
   , min_abs_v(0.01)
   , min_abs_w(0.1)
-  , signal_window(20)
+  , signal_window(12)
   , ROBOT_STATE_STR(13)
 {
   // Debug messages
@@ -119,10 +87,10 @@ void DockDrive::modeShift(const std::string& mode)
  * @param charger sensor
  * @param current pose
  */
-void DockDrive::update(const std::vector<unsigned char> &signal
-                , const unsigned char &bumper
-                , const unsigned char &charger
-                , const ecl::LegacyPose2D<double>& pose) 
+void DockDrive::update( const std::vector<unsigned char> &signal,
+                        const unsigned char &bumper,
+                        const unsigned char &charger,
+                        const ecl::LegacyPose2D<double>& pose) 
 {
   ecl::LegacyPose2D<double> pose_update;
   std::vector<unsigned char> signal_filt(signal.size(), 0);
@@ -140,6 +108,7 @@ void DockDrive::update(const std::vector<unsigned char> &signal
     filterIRSensor(signal_filt, signal);
     updateVelocity(signal_filt, pose_update, debug_str);
   }
+
   velocityCommands(vx, wz);
 
   // for easy debugging
@@ -173,19 +142,27 @@ void DockDrive::computePoseUpdate(ecl::LegacyPose2D<double>& pose_update, const 
  * @param signal - the raw data from robot
  **/
 
-void DockDrive::filterIRSensor(std::vector<unsigned char>& signal_filt,const std::vector<unsigned char> &signal)
+void DockDrive::filterIRSensor( std::vector<unsigned char>& signal_filt,
+                                const std::vector<unsigned char> &signal)
 {
   //dock_ir signals filtering
   past_signals.push_back(signal);
-  while (past_signals.size() > signal_window) {
+  while (past_signals.size() > signal_window) 
+  {
     past_signals.erase( past_signals.begin(), past_signals.begin() + past_signals.size() - signal_window);
   }
 
-  for ( unsigned int i = 0; i < past_signals.size(); i++) {
+  for ( unsigned int i = 0; i < past_signals.size(); i++) 
+  {
     if (signal_filt.size() != past_signals[i].size())
       continue;
     for (unsigned int j = 0; j < signal_filt.size(); j++)
-      signal_filt[j] |= past_signals[i][j];
+    {
+      //if ( past_signals[i][j] <= 32)
+        signal_filt[j] |= past_signals[i][j];
+      //else
+        //ROS_INFO_STREAM("Invalid IR Data");
+    }
   }
 }
 
@@ -276,36 +253,54 @@ void DockDrive::processBumpChargeEvent(const unsigned char& bumper,
  * @param pose_update
  *
  *************************/
-void DockDrive::updateVelocity(const std::vector<unsigned char>& signal_filt, const ecl::LegacyPose2D<double>& pose_update, std::string& debug_str)
+void DockDrive::updateVelocity( const std::vector<unsigned char>& signal_filt, 
+                                const ecl::LegacyPose2D<double>& pose_update, 
+                                std::string& debug_str)
 {
   std::ostringstream oss;
   RobotDockingState::State current_state, new_state;
   double new_vx = 0.0;
   double new_wz = 0.0;
 
+
   // determine the current state based on ir and the previous state
   // common transition. idle -> scan -> find_stream -> get_stream -> scan -> aligned_far -> aligned_near -> docked_in -> done
 
   current_state = new_state = state;
+  static RobotDockingState::State testState;
+  //static RobotDockingState::State testState = current_state;
+
   switch((unsigned int)current_state) {
     case RobotDockingState::IDLE:
+      if (testState != current_state)
+        ROS_INFO_STREAM("Case IDLE");
       idle(new_state, new_vx, new_wz);
       break;
     case RobotDockingState::SCAN:
+      if (testState != current_state)
+        ROS_INFO_STREAM("Case SCAN");
       scan(new_state, new_vx, new_wz, signal_filt, pose_update, debug_str);
       break;
     case RobotDockingState::FIND_STREAM:
+      if (testState != current_state)
+        ROS_INFO_STREAM("Case FIND_STREAM");
       find_stream(new_state, new_vx, new_wz, signal_filt);
       break;
     case RobotDockingState::GET_STREAM:
-      get_stream(new_state, new_vx, new_wz, signal_filt);
+      if (testState != current_state)
+        ROS_INFO_STREAM("Case GET_STREAM");
+      get_stream(new_state, new_vx, new_wz, signal_filt); 
       break;
     case RobotDockingState::ALIGNED:
     case RobotDockingState::ALIGNED_FAR:
     case RobotDockingState::ALIGNED_NEAR:
+      if (testState != current_state)
+        ROS_INFO_STREAM("Case ALIGNED");
       aligned(new_state, new_vx, new_wz, signal_filt, debug_str);
       break;
     case RobotDockingState::BUMPED:
+    if (testState != current_state)
+        ROS_INFO_STREAM("Case BUMPED");
       bumped(new_state, new_vx, new_wz, bump_remainder);
       break;
 		case RobotDockingState::LOST:
@@ -313,10 +308,12 @@ void DockDrive::updateVelocity(const std::vector<unsigned char>& signal_filt, co
 			ROS_INFO_STREAM("Case LOST");
 			break;
     default:
-      oss << "Wrong state : " << current_state;
-      debug_str = oss.str();
+        ROS_INFO_STREAM("Case DEFAULT");
+        debug_str = oss.str();
       break;
   }
+
+  testState = current_state;
 
   setStateVel(new_state, new_vx, new_wz);
   state_str = ROBOT_STATE_STR[new_state];
