@@ -308,7 +308,11 @@ void DockDrive::updateVelocity( const std::vector<unsigned char>& signal_filt,
 			ROS_INFO_STREAM("Case LOST");
 			break;
     default:
-        ROS_INFO_STREAM("Case DEFAULT");
+        ROS_INFO_STREAM("Case DEFAULT - LOST");
+        // If we end up here there there is probably a problem so just assume
+        // Robot is lost and kick it back to the planning algo to try and sort 
+        // out
+        new_state =  RobotDockingState::LOST;
         debug_str = oss.str();
       break;
   }

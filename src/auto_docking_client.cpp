@@ -1,7 +1,7 @@
 #include <ros/ros.h>
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/client/terminal_state.h>
-#include <../../../../devel_isolated/mxnet_actionlib/include/mxnet_actionlib/AutoDockingAction.h>
+#include <../../../devel_isolated/mxnet_actionlib/include/mxnet_actionlib/AutoDockingAction.h>
 
 
 using namespace mxnet_actionlib;
